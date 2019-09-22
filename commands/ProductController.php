@@ -11,7 +11,9 @@ use yii\console\Controller;
 use yii\console\ExitCode;
 use app\models\Queue;
 use app\models\Product;
+use app\models\Task;
 use darkdrim\simplehtmldom\SimpleHTMLDom as SHD;
+use app\commands\PreControllerTrait;
 
 /**
  * This command echoes the first argument that you have entered.
@@ -23,47 +25,25 @@ use darkdrim\simplehtmldom\SimpleHTMLDom as SHD;
  */
 class ProductController extends Controller
 {
-    /**
-     * This command echoes what you have entered as the message.
-     * @param string $message the message to be echoed.
-     * @return int Exit code
-     */
-    private function actionIndex($message = 'hello world')
-    {
-        echo $message . "\n";
-
-        return ExitCode::OK;
-    }
     
-    public function beforeAction($action)
-    {
-        $task = \app\models\Task::findBySql("SELECT * FROM `task` WHERE `command`=:command AND (DATE_ADD(`started`, INTERVAL 1 HOUR) > NOW()) AND `ended` IS NULL", ["command"=>"queue"])->one();
-        if ($task) {
-            echo "You have an undone task!!!\n";
-            return false;
-        } else {
-            $task = new \app\models\Task;
-            $task->setAttributes([
-                "command" => "product",
-                "created" => date("Y-m-d H:i:s"),
-                "started" => date("Y-m-d H:i:s"),
-            ]);
-            $task->save();
-            echo "New task was added and started!!!\n";
-        }
-        return parent::beforeAction($action);
-    }
+    use PreControllerTrait;
     
     public function actionProcess()
     {
-        $products = \app\models\Product::find()->where(["processed"=>0, "deleted"=>0])->limit(50)->all();
+        $products = Product::find()
+                ->andWhere([
+                    "processed" => 0, 
+                    "deleted" => 0,
+                ])
+                ->limit(50)
+                ->all();
         if ($products) {
             foreach ($products as $product) {
                 self::processProduct($product);
                 sleep(1);
             }
         }
-        $task = \app\models\Task::findBySql("SELECT * FROM `task` WHERE `command`=:command AND (DATE_ADD(`started`, INTERVAL 5 MINUTE) > NOW()) AND `ended` IS NULL", ["command"=>"product"])->one();
+        $task = Task::findBySql("SELECT * FROM `task` WHERE `command`=:command AND (DATE_ADD(`started`, INTERVAL 5 MINUTE) > NOW()) AND `ended` IS NULL", ["command"=>"product"])->one();
         if ($task) {
             $task->setAttribute("ended", date("Y-m-d H:i:s"));
             $task->save();
@@ -71,7 +51,7 @@ class ProductController extends Controller
         }
     }
     
-    private static function processProduct(\app\models\Product $product)
+    private static function processProduct(Product $product)
     {
         $html_source = SHD::file_get_html($product->url);
         if ($html_source) {

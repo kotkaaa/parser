@@ -11,32 +11,12 @@ use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\Queue;
 use app\models\Product;
+use app\controllers\PreControllerTrait;
 
 class ProductController extends Controller
 {
     
-    /**
-     * Displays homepage.
-     *
-     * @return string
-     */
-    public function actionIndex()
-    {
-        return $this->render('index');
-    }
-    
-    public function beforeAction($action)
-    {
-        // ...set `$this->enableCsrfValidation` here based on some conditions...
-        // call parent method that will check CSRF if such property is true.
-        if (Yii::$app->request->method == "POST") {
-//            $logger = new \yii\log\Logger;
-//            $logger->log($_POST, \yii\log\Logger::LEVEL_INFO);
-            # code...
-            $this->enableCsrfValidation = 0;
-        } 
-        return parent::beforeAction($action);
-    }
+    use PreControllerTrait;
 
     public function actionList()
     {
@@ -63,11 +43,12 @@ class ProductController extends Controller
                 $wherebrand = ['like', 'brand', $filters["brand"]];
             }
         }
-        $products = \app\models\Product::find()
+        $products = Product::find()
                     ->where($conditions)
                     ->andWhere($wheretitle)
                     ->andWhere($wherebrand)
-                    ->offset($offset)->limit($limit)
+                    ->offset($offset)
+                    ->limit($limit)
                     ->all();
         if (!empty($products)) {
             foreach ($products as &$product) {
@@ -102,7 +83,7 @@ class ProductController extends Controller
                 $wherebrand = ['like', 'brand', $filters["brand"]];
             }
         }
-        $total = \app\models\Product::find()
+        $total = Product::find()
                 ->where($conditions)
                 ->andWhere($wheretitle)
                 ->andWhere($wherebrand)
@@ -124,6 +105,8 @@ class ProductController extends Controller
         if ($product) $product->deleted = 1;
         if ($product->save()) {
             $this->asJson(["result" => "success", "message" => "Entry successfully saved!"]);
-        } else $this->asJson(["result" => "error", "message" => "Entry not found and can't be saved!"]);
+        } else {
+            $this->asJson(["result" => "error", "message" => "Entry not found and can't be saved!"]);
+        }
     }
 }

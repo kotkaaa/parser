@@ -96,6 +96,13 @@ $config = [
                     ]
                 ],
                 [
+                    'pattern' => 'queue/edit/<id:\d+>',
+                    'route'   => 'queue/edit',
+                    'defaults'=> [
+                        'id' => 0
+                    ]
+                ],
+                [
                     'pattern' => 'queue/<id:\d+>',
                     'route'   => 'queue/view',
                     'defaults'=> [

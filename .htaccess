@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+    RewriteCond %{HTTP_HOST} ^lagrande\.parser$ [NC,OR]
+    RewriteCond %{HTTP_HOST} ^www\.lagrande\.parser$
+    RewriteCond %{REQUEST_URI} !web/
+    RewriteRule (.*) /web/$1 [L]
+</IfModule>
